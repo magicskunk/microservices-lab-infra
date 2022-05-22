@@ -7,7 +7,7 @@ resource "aws_ecr_repository" "aws_ecr_repository_default" {
   }
 
   tags = {
-    name = format("%s-%s-%s", var.product_name, var.environment_code, "ecr-repo"),
+    name = format("%s-%s-%s", var.project_name, var.environment_code, "ecr-repo"),
     env  = var.environment_code
   }
 }
