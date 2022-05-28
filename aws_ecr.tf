@@ -6,10 +6,10 @@ resource "aws_ecr_repository" "aws_ecr_repository_default" {
     scan_on_push = false
   }
 
-  tags = {
-    name = format("%s-%s-%s", var.project_name, var.environment_code, "ecr-repo"),
+  tags = merge(local.common_tags, {
+    Name = "ecr-repo"
     env  = var.environment_code
-  }
+  })
 }
 
 resource "aws_iam_policy" "ecr_get_authorization_token_policy" {

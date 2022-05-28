@@ -14,7 +14,7 @@ resource "aws_eks_cluster" "this" {
   }
 
   tags = merge(
-    var.tags
+    local.common_tags
   )
 
   depends_on = [
@@ -53,11 +53,11 @@ resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
 resource "aws_security_group" "eks_cluster" {
   name        = "${var.project_name}-cluster-sg"
   description = "Cluster communication with worker nodes"
-  vpc_id      = aws_vpc.this.id
+  vpc_id      = aws_vpc.main.id
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name = "${var.project_name}-cluster-sg"
-  }
+  })
 }
 
 resource "aws_security_group_rule" "cluster_inbound" {

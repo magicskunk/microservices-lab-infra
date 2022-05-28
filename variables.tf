@@ -34,11 +34,9 @@ variable "subnet_cidr_bits" {
   default     = 8
 }
 
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {
-    "Project"     = "magicskunk"
-    "Environment" = "Dev"
+locals {
+  common_tags = {
+    "Project"     = project_name
+    "Environment" = environment_code
   }
 }

@@ -17,7 +17,7 @@ resource "aws_eks_node_group" "this" {
   instance_types = ["t2.micro"]
 
   tags = merge(
-    var.tags
+    local.common_tags
   )
 
   depends_on = [
@@ -76,10 +76,10 @@ resource "aws_security_group" "eks_nodes" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
+  tags = merge(local.common_tags, {
     Name                                                = "${var.project_name}-node-sg"
     "kubernetes.io/cluster/${var.project_name}-cluster" = "owned"
-  }
+  })
 }
 
 resource "aws_security_group_rule" "nodes_internal" {
