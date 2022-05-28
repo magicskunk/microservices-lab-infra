@@ -40,7 +40,7 @@ resource "aws_subnet" "private_subnet" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = merge(local.common_tags, {
-    Name                                                = "${var.project_name}-private-sg"
+    Name                                                = "${var.project_name}-private-subnet-${count.index}"
     "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"
     "kubernetes.io/role/internal-elb"                   = 1
   })
