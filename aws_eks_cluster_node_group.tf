@@ -1,9 +1,9 @@
 # EKS Node Groups
-resource "aws_eks_node_group" "this" {
-  cluster_name    = aws_eks_cluster.this.name
+resource "aws_eks_node_group" "eks_node_group" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
   node_group_name = var.project_name
-  node_role_arn   = aws_iam_role.node.arn
-  subnet_ids      = aws_subnet.private[*].id
+  node_role_arn   = aws_iam_role.eks_node_role.arn
+  subnet_ids      = aws_subnet.private_subnet[*].id
 
   scaling_config {
     desired_size = 2
@@ -21,15 +21,15 @@ resource "aws_eks_node_group" "this" {
   )
 
   depends_on = [
-    aws_iam_role_policy_attachment.node_AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.node_AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.eks_node_AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.eks_node_AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.eks_node_AmazonEC2ContainerRegistryReadOnly,
   ]
 }
 
 # EKS Node IAM Role
-resource "aws_iam_role" "node" {
-  name = "${var.project_name}-Worker-Role"
+resource "aws_iam_role" "eks_node_role" {
+  name = "${var.project_name}-worker-role"
 
   assume_role_policy = <<POLICY
 {
@@ -47,27 +47,27 @@ resource "aws_iam_role" "node" {
 POLICY
 }
 
-resource "aws_iam_role_policy_attachment" "node_AmazonEKSWorkerNodePolicy" {
+resource "aws_iam_role_policy_attachment" "eks_node_AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.node.name
+  role       = aws_iam_role.eks_node_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "node_AmazonEKS_CNI_Policy" {
+resource "aws_iam_role_policy_attachment" "eks_node_AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.node.name
+  role       = aws_iam_role.eks_node_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "node_AmazonEC2ContainerRegistryReadOnly" {
+resource "aws_iam_role_policy_attachment" "eks_node_AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.node.name
+  role       = aws_iam_role.eks_node_role.name
 }
 
 
 # EKS Node Security Group
-resource "aws_security_group" "eks_nodes" {
+resource "aws_security_group" "eks_nodes_sg" {
   name        = "${var.project_name}-node-sg"
   description = "Security group for all nodes in the cluster"
-  vpc_id      = aws_vpc.this.id
+  vpc_id      = aws_vpc.main_vpc.id
 
   egress {
     from_port   = 0
@@ -82,22 +82,22 @@ resource "aws_security_group" "eks_nodes" {
   })
 }
 
-resource "aws_security_group_rule" "nodes_internal" {
+resource "aws_security_group_rule" "eks_nodes_internal_sg_rule" {
   description              = "Allow nodes to communicate with each other"
   from_port                = 0
   protocol                 = "-1"
-  security_group_id        = aws_security_group.eks_nodes.id
-  source_security_group_id = aws_security_group.eks_nodes.id
+  security_group_id        = aws_security_group.eks_nodes_sg.id
+  source_security_group_id = aws_security_group.eks_nodes_sg.id
   to_port                  = 65535
   type                     = "ingress"
 }
 
-resource "aws_security_group_rule" "nodes_cluster_inbound" {
+resource "aws_security_group_rule" "eks_nodes_cluster_inbound_sg_rule" {
   description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
   from_port                = 1025
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.eks_nodes.id
-  source_security_group_id = aws_security_group.eks_cluster.id
+  security_group_id        = aws_security_group.eks_nodes_sg.id
+  source_security_group_id = aws_security_group.eks_cluster_sg.id
   to_port                  = 65535
   type                     = "ingress"
 }

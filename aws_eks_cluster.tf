@@ -1,13 +1,15 @@
 # https://medium.com/devops-mojo/terraform-provision-amazon-eks-cluster-using-terraform-deploy-create-aws-eks-kubernetes-cluster-tf-4134ab22c594
 # EKS Cluster
-resource "aws_eks_cluster" "this" {
+resource "aws_eks_cluster" "eks_cluster" {
   name     = "${var.project_name}-cluster"
-  role_arn = aws_iam_role.cluster.arn
+  role_arn = aws_iam_role.eks_cluster_role.arn
   version  = "1.21"
 
   vpc_config {
     # security_group_ids      = [aws_security_group.eks_cluster.id, aws_security_group.eks_nodes.id]
-    subnet_ids              = flatten([aws_subnet.public[*].id, aws_subnet.private[*].id])
+    subnet_ids              = flatten([
+      aws_subnet.public_subnet[*].id, aws_subnet.private_subnet[*].id
+    ])
     endpoint_private_access = true
     endpoint_public_access  = true
     public_access_cidrs     = ["0.0.0.0/0"]
@@ -18,14 +20,14 @@ resource "aws_eks_cluster" "this" {
   )
 
   depends_on = [
-    aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy
+    aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy
   ]
 }
 
 
 # EKS Cluster IAM Role
-resource "aws_iam_role" "cluster" {
-  name = "${var.project_name}-Cluster-Role"
+resource "aws_iam_role" "eks_cluster_role" {
+  name = "${var.project_name}-cluster-role"
 
   assume_role_policy = <<POLICY
 {
@@ -43,39 +45,39 @@ resource "aws_iam_role" "cluster" {
 POLICY
 }
 
-resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
+resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.cluster.name
+  role       = aws_iam_role.eks_cluster_role.name
 }
 
 
 # EKS Cluster Security Group
-resource "aws_security_group" "eks_cluster" {
+resource "aws_security_group" "eks_cluster_sg" {
   name        = "${var.project_name}-cluster-sg"
   description = "Cluster communication with worker nodes"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.main_vpc.id
 
   tags = merge(local.common_tags, {
     Name = "${var.project_name}-cluster-sg"
   })
 }
 
-resource "aws_security_group_rule" "cluster_inbound" {
+resource "aws_security_group_rule" "eks_cluster_inbound_sg_rule" {
   description              = "Allow worker nodes to communicate with the cluster API Server"
   from_port                = 443
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.eks_cluster.id
-  source_security_group_id = aws_security_group.eks_nodes.id
+  security_group_id        = aws_security_group.eks_cluster_sg.id
+  source_security_group_id = aws_security_group.eks_nodes_sg.id
   to_port                  = 443
   type                     = "ingress"
 }
 
-resource "aws_security_group_rule" "cluster_outbound" {
+resource "aws_security_group_rule" "eks_cluster_outbound_sg_rule" {
   description              = "Allow cluster API Server to communicate with the worker nodes"
   from_port                = 1024
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.eks_cluster.id
-  source_security_group_id = aws_security_group.eks_nodes.id
+  security_group_id        = aws_security_group.eks_cluster_sg.id
+  source_security_group_id = aws_security_group.eks_nodes_sg.id
   to_port                  = 65535
   type                     = "egress"
 }

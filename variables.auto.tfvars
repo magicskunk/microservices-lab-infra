@@ -6,6 +6,4 @@ ecr_repos = {
   dev = "magicskunk"
 }
 
-availability_zones_count = {
-  dev = 2
-}
+availability_zones_count = 2

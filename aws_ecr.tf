@@ -1,4 +1,4 @@
-resource "aws_ecr_repository" "aws_ecr_repository_default" {
+resource "aws_ecr_repository" "ecr_repository" {
   name                 = lookup(var.ecr_repos, var.environment_code)
   image_tag_mutability = "MUTABLE"
 
@@ -46,7 +46,7 @@ resource "aws_iam_policy" "ecr_pull_allowed_policy" {
           "ecr:BatchGetImage",
           "ecr:BatchCheckLayerAvailability"
         ],
-        "Resource" : aws_ecr_repository.aws_ecr_repository_default.arn
+        "Resource" : aws_ecr_repository.ecr_repository.arn
       }
     ]
   })
@@ -71,7 +71,7 @@ resource "aws_iam_policy" "ecr_pull_push_allowed_policy" {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload"
         ],
-        "Resource" : aws_ecr_repository.aws_ecr_repository_default.arn
+        "Resource" : aws_ecr_repository.ecr_repository.arn
       }
     ]
   })
